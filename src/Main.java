@@ -1,3 +1,5 @@
+import forTesting.Text;
+
 public class Main {
     public static void main(String [] args) {
         Example i = new Example();
@@ -5,10 +7,10 @@ public class Main {
 //        StringBuilder stb = new StringBuilder("sfdfsd sdf sd f sdf sdf s. sdf sf sdf sdf . sdf sdf!");
 //        Text i = new Text(stb);
 
-//        String result = JSONObject.generator(i);
-//        System.out.println(result);
-//        JSONObject.validator(result);
-        System.out.println(JSONObject.determineSimpleArray("[1,null,3,false,\"rwerwer\",,,,,,]"));
+        String result = JSON.generator(i);
+
+        System.out.println(result);
+        System.out.println(JSON.validator(result));
 
         //----------------------------------------------------------------------
 

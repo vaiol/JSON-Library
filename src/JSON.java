@@ -3,16 +3,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class JSONObject {
-    private String object;
+public class JSON {
     private static final Set<Class<?>> WRAPPER_TYPES = getWrapperTypes();
     private static final Set<Character> DELIMETERS = getDelimeters();
 
-
-    public JSONObject(Object object) {
-        //System.out.println(object.getClass().getCanonicalName() + ":");
-        System.out.println(generator(object));
-    }
+    private JSON() {}
 
 
     public static String generator(Object object) {
@@ -32,68 +27,71 @@ public class JSONObject {
     }
 
     public static boolean validator(String json) {
-        json = deleteAllDelimeters(json);
-        System.out.println(json);
-        json = deleteAllKeyWords(json);
-        System.out.println(json);
-        json = deleteAllWords(json);
-        System.out.println(json);
-        json = deleteAllNumbers(json);
-        System.out.println(json);
-        return false;
+        boolean b = false;
+        try {
+            json = json.trim();
+            if (!firstValidation(json)) {
+                return false;
+            }
+            json = deleteAllDelimeters(json);
+//        System.out.println(json);
+            json = deleteAllWords(json);
+//        System.out.println(json);
+            json = deleteAllKeyWords(json);
+//        System.out.println(json);
+            json = deleteAllNumbers(json);
+//        System.out.println(json);
+
+
+            String tmp = "";
+            b = true;
+            while (!json.isEmpty()) {
+                if (json.equals(tmp)) {
+                    b = false;
+                    break;
+                }
+                tmp = json;
+                json = deleteSimpleArrays(json);
+                if (json.equals("\"\"")) {
+                    break;
+                }
+//            System.out.println(json);
+                json = deleteEmptyElements(json);
+                if (json.equals("\"\"")) {
+                    break;
+                }
+//            System.out.println(json);
+                json = deleteEmptyObject(json);
+                if (json.equals("\"\"")) {
+                    break;
+                }
+//            System.out.println(json);
+            }
+        } catch (Exception e){}
+        return b;
     }
 
+    //===============================VALIDATOR METHOD========================================
 
+    private static boolean firstValidation(String oldString) {
+        if(oldString.isEmpty()) {
+            return false;
+        } else if(oldString.charAt(0) == '{' || oldString.charAt(oldString.length() - 1) == '}') {
+            return true;
+        } else if(oldString.charAt(0) == '[' || oldString.charAt(oldString.length() - 1) == ']') {
+            return true;
+        }
+        return true;
+    }
 
     private static String deleteAllKeyWords(String oldString) {
-        StringBuilder result = new StringBuilder(oldString);
-        int keywordLength = 4;
-        int lengthOfAdditionalStr = 2;
-
-        int nextIndex = 0;
-        int index = 0;
-        while(nextIndex < result.length() && index>= 0) {
-            index = result.indexOf("true", nextIndex);
-            nextIndex = index + keywordLength;
-            if(index != -1) {
-                String tmp = result.substring(index - lengthOfAdditionalStr, index);
-                if (tmp.equals("\":")) {
-                    result.replace(index, nextIndex, "\"\"");
-                }
-            }
-        }
-
-        nextIndex = 0;
-        index = 0;
-        while(nextIndex < result.length() && index>= 0) {
-            index = result.indexOf("null", nextIndex);
-            nextIndex = index + keywordLength;
-            if(index != -1) {
-                String tmp = result.substring(index - lengthOfAdditionalStr, index);
-                if (tmp.equals("\":")) {
-                    result.replace(index, nextIndex, "\"\"");
-                }
-            }
-        }
-
-        nextIndex = 0;
-        index = 0;
-        while(nextIndex < result.length() && index>= 0) {
-            index = result.indexOf("false", nextIndex);
-            nextIndex = index + keywordLength+1;
-            if(index != -1) {
-                String tmp = result.substring(index - lengthOfAdditionalStr, index);
-                if (tmp.equals("\":")) {
-                    result.replace(index, nextIndex, "\"\"");
-                }
-            }
-        }
-
-        return result.toString();
+        String result = replaceAllElement(oldString, "true", "\"\"");
+        result = replaceAllElement(result, "false", "\"\"");
+        result = replaceAllElement(result, "null", "\"\"");
+        return result;
     }
 
     private static String deleteAllDelimeters(String oldString) {
-        oldString = oldString.trim();
         StringBuilder result = new StringBuilder(oldString);
 
 
@@ -136,23 +134,43 @@ public class JSONObject {
 
         while(nextIndex >= 0 && index >= 0) {
             index = result.indexOf(":", index+len);
+            len = 1;
             if(index < 0) {
                 break;
             }
-            nextIndex = result.indexOf(",", index+1);
+            int indexComma = result.indexOf(",", index+1);
+            int indexBracket = result.indexOf("}", index+1);
+
+
+            if(indexComma < indexBracket) {
+                if(indexComma > 0) {
+                    nextIndex = indexComma;
+                } else if(indexBracket > 0) {
+                    nextIndex = indexBracket;
+                }
+            } else if(indexBracket > 0) {
+                nextIndex = indexBracket;
+            } else if(indexComma > 0) {
+                    nextIndex = indexComma;
+            } else {
+                nextIndex = - 1;
+            }
+
             if (nextIndex < 0) {
                 throw new RuntimeException("Hello");
             }
             String tmp = result.substring(index+1, nextIndex);
             if(determineNumbers(tmp)) {
                 result.replace(index+1, nextIndex, "\"\"");
+                len = 2;
             }
-            len = 2;
+
         }
         return result.toString();
     }
 
-    private static String deleteSimpleArray(String oldString) {
+    private static String deleteSimpleArrays(String oldString) {
+
         StringBuilder result = new StringBuilder(oldString);
 
         int index = 0;
@@ -168,9 +186,9 @@ public class JSONObject {
             if (nextIndex < 0) {
                 throw new RuntimeException("Hello");
             }
-            String tmp = result.substring(index+1, nextIndex);
-            if(determineNumbers(tmp)) {
-                result.replace(index+1, nextIndex, "\"\"");
+            String tmp = result.substring(index, nextIndex+1);
+            if(determineSimpleArray(tmp)) {
+                result.replace(index, nextIndex+1, "\"\"");
             }
             len = 2;
         }
@@ -179,7 +197,118 @@ public class JSONObject {
 
     }
 
-    //----------------------------------------------------------------------
+    private static String deleteEmptyElements(String oldString) {
+        return replaceAllElement(oldString, "\"\":\"\",", "");
+    }
+
+    private static String deleteEmptyObject(String oldString) {
+        return replaceAllElement(oldString, "{\"\":\"\"}", "\"\"");
+    }
+
+    private static String replaceAllElement(String oldString, String oldElement, String newElement) {
+        StringBuilder result = new StringBuilder(oldString);
+
+        int lenOfElement = oldElement.length();
+        int index = 0;
+        int nextIndex = 0;
+
+        while(nextIndex < result.length() && index>= 0) {
+            index = result.indexOf(oldElement, nextIndex);
+            nextIndex = index + lenOfElement;
+            if(index != -1) {
+                result.replace(index, nextIndex, newElement);
+                nextIndex = nextIndex-(lenOfElement-newElement.length());
+            }
+        }
+        return result.toString();
+    }
+
+    private static Set<Character> getDelimeters() {
+        Set<Character> delim = new HashSet<Character>();
+        delim.add(' ');
+        delim.add('\t');
+        delim.add('\n');
+        return delim;
+    }
+
+    private static int countOfChar(String string, char ch) {
+        int count = 0;
+        if(string.isEmpty()) {
+            return count;
+        }
+        for(int i  = 0; i < string.length(); i++) {
+            if(string.charAt(i) == ch) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static boolean determineNumbers(String string) {
+        boolean b;
+        try {
+            try {
+                Integer.parseInt(string);
+            } catch (NumberFormatException e) {
+                Double.parseDouble(string);
+            }
+            b = true;
+        } catch (NumberFormatException e) {
+            b = false;
+        }
+        return b;
+    }
+
+    private static boolean determineKeywords(String string) {
+        if(string.equals("true")) {
+            return true;
+        } else if(string.equals("false")) {
+            return true;
+        } else if (string.equals("null")) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean determineWords(String string) {
+        if(string.isEmpty()) {
+            return false;
+        }
+        if(string.charAt(0) != '"' || string.charAt(string.length() - 1) != '"') {
+            return false;
+        }
+        string = string.substring(1, string.length() - 1);
+        return (string.indexOf('"') < 0);
+    }
+
+    private static boolean determineSimpleArray(String string) {
+        if(string.isEmpty()) {
+            return false;
+        }
+        if(string.charAt(0) != '[' || string.charAt(string.length() - 1) != ']') {
+            return false;
+        }
+        string = deleteAllWords(string);
+        string = string.substring(1, string.length() - 1);
+        int countOfComma = countOfChar(string, ',') + 1;
+        String[] elements = string.split(",");
+        if(elements.length != countOfComma) {
+            return false;
+        }
+        for(String element : elements) {
+            if(determineNumbers(element)) {
+                continue;
+            } else if(determineKeywords(element)) {
+                continue;
+            } else if(determineWords(element)) {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    //================================GENERATOR METHOD========================================
 
     private static String checkToGenerate(Object object, int countOfTab) {
         String result = "";
@@ -345,75 +474,5 @@ public class JSONObject {
         }
         return result;
     }
-
-    private static Set<Character> getDelimeters() {
-        Set<Character> delim = new HashSet<Character>();
-        delim.add(' ');
-        delim.add('\t');
-        delim.add('\n');
-        return delim;
-    }
-
-    private static int countOfElement(String string, String element) {
-        return -10;
-    }
-
-    private static boolean determineNumbers(String string) {
-        boolean b = false;
-        try {
-            try {
-                Integer.parseInt(string);
-            } catch (NumberFormatException e) {
-                Double.parseDouble(string);
-            }
-            b = true;
-        } catch (NumberFormatException e) {
-            b = false;
-        }
-        return b;
-    }
-
-    private static boolean determineKeywords(String string) {
-        if(string.equals("true")) {
-            return true;
-        } else if(string.equals("false")) {
-            return true;
-        } else if (string.equals("null")) {
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean determineWords(String string) {
-        if(string.charAt(0) != '"' || string.charAt(string.length() - 1) != '"') {
-            return false;
-        }
-        string = string.substring(1, string.length() - 1);
-        return (string.indexOf('"') < 0);
-    }
-
-    public static boolean determineSimpleArray(String string) {
-        boolean b = false;
-        if(string.charAt(0) != '[' || string.charAt(string.length() - 1) != ']') {
-            return false;
-        }
-        string = string.substring(1, string.length() - 1);
-
-        String[] elements = string.split(",");
-        for(String element : elements) {
-            if(determineNumbers(element)) {
-               continue;
-            } else if(determineKeywords(element)) {
-                continue;
-            } else if(determineWords(element)) {
-                continue;
-            }
-            return false;
-        }
-        return true;
-    }
-
-
-
 
 }
