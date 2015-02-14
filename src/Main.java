@@ -1,31 +1,23 @@
-import java.lang.reflect.*;
-import java.util.HashSet;
-import java.util.Set;
-
 public class Main {
     public static void main(String [] args) {
         Example i = new Example();
-        JSONObject jsobject = new JSONObject(i);
+//        Integer[] i = {1, 2, 3, 4, 5};
+//        StringBuilder stb = new StringBuilder("sfdfsd sdf sd f sdf sdf s. sdf sf sdf sdf . sdf sdf!");
+//        Text i = new Text(stb);
 
+//        String result = JSONObject.generator(i);
+//        System.out.println(result);
+//        JSONObject.validator(result);
+        System.out.println(JSONObject.determineSimpleArray("[1,null,3,false,\"rwerwer\",,,,,,]"));
 
-    }
-    public static boolean isWrapperType(Class<?> clazz)
-    {
-        return getWrapperTypes().contains(clazz);
-    }
+        //----------------------------------------------------------------------
 
-    private static Set<Class<?>> getWrapperTypes()
-    {
-        Set<Class<?>> ret = new HashSet<Class<?>>();
-        ret.add(Boolean.class);
-        ret.add(Character.class);//sdfsdf
-        ret.add(Byte.class);
-        ret.add(Short.class);
-        ret.add(Integer.class);
-        ret.add(Long.class);
-        ret.add(Float.class);
-        ret.add(Double.class);
-        ret.add(Void.class);//sfsf
-        return ret;
+//        Map map = new HashMap<String, Object>();
+//        map.put("newHashMap", new HashMap<String, Object>());
+
+//        String piu = " sfdf sf sdf sdf s  ";
+//        System.out.println(piu + "|");
+//        piu = piu.trim();
+        System.out.println("END");
     }
 }

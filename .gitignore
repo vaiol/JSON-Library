@@ -2,6 +2,7 @@
 ## Eclipse
 #################
 
+forTesting
 *.pydevproject
 .project
 .metadata
